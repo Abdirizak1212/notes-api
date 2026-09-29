@@ -1,0 +1,8 @@
+﻿Invoke-RestMethod : {"detail":"Not Found"}
+At line:1 char:7
++ try { Invoke-RestMethod -Uri "$uri/1" -Method Put -Body $body -Conten ...
++       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (System.Net.HttpWebRequest:Htt 
+   pWebRequest) [Invoke-RestMethod], WebException
+    + FullyQualifiedErrorId : WebCmdletWebResponseException,Microsoft.PowerShe 
+   ll.Commands.InvokeRestMethodCommand
