@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 from typing import List
 from sqlalchemy import select, update
@@ -9,6 +9,8 @@ from dotenv import dotenv_values
 
 from database import engine, notes
 from models import NoteCreate, NoteResponse
+from auth import get_current_user
+from users import router as users_router
 
 values = dotenv_values('.env')
 
@@ -23,14 +25,14 @@ def root():
     return {"status": "ok"}
 
 @app.get("/notes", response_model=List[NoteResponse])
-def get_notes():
+def get_notes(current_user: dict = Depends(get_current_user)):
     with Session(bind=engine) as session:
         stmt = select(notes)
         result = session.execute(stmt).all()
         return [NoteResponse.model_validate(dict(row._mapping)) for row in result]
 
 @app.get("/notes/{note_id}", response_model=NoteResponse)
-def get_note(note_id: int):
+def get_note(note_id: int, current_user: dict = Depends(get_current_user)):
     with Session(bind=engine) as session:
         stmt = select(notes).where(notes.c.id == note_id)
         row = session.execute(stmt).first()
@@ -39,7 +41,7 @@ def get_note(note_id: int):
         return NoteResponse.model_validate(dict(row._mapping))
 
 @app.post("/notes", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
-def create_note(note: NoteCreate):
+def create_note(note: NoteCreate, current_user: dict = Depends(get_current_user)):
     with Session(bind=engine) as session:
         ins = notes.insert().values(title=note.title, content=note.content)
         result = session.execute(ins)
@@ -50,7 +52,7 @@ def create_note(note: NoteCreate):
         return NoteResponse.model_validate(dict(row._mapping))
 
 @app.put("/notes/{note_id}", response_model=NoteResponse)
-def update_note(note_id: int, payload: NoteCreate):
+def update_note(note_id: int, payload: NoteCreate, current_user: dict = Depends(get_current_user)):
     with Session(bind=engine) as session:
         stmt = select(notes).where(notes.c.id == note_id)
         row = session.execute(stmt).first()
@@ -68,7 +70,7 @@ def update_note(note_id: int, payload: NoteCreate):
         return NoteResponse.model_validate(dict(row._mapping))
 
 @app.delete("/notes/{note_id}")
-def delete_note(note_id: int):
+def delete_note(note_id: int, current_user: dict = Depends(get_current_user)):
     with Session(bind=engine) as session:
         stmt = select(notes).where(notes.c.id == note_id)
         row = session.execute(stmt).first()
@@ -77,3 +79,6 @@ def delete_note(note_id: int):
         session.execute(notes.delete().where(notes.c.id == note_id))
         session.commit()
         return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
+
+
+app.include_router(users_router)
